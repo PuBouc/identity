@@ -1,22 +1,35 @@
-import * as mongoose from 'mongoose';
+import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import { CreateUserDTO } from '../dto/create-user.dto';
 
-export const UserSchema = new mongoose.Schema({
-    username: { type: String, required: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
-});
+export type UserDocument = UserModel & Document;
 
-UserSchema.pre('save', async function(next: mongoose.HookNextFunction) {
-    try {
-        if (!this.isModified('password')) {
-            return next();
-        }
+@Schema()
+export class UserModel extends Document {
+  @Prop({ unique: true })
+  email: string;
 
-        this['password'] = await bcrypt.hash(this['password'], Number(process.env.HASH_SALT));
+  @Prop({ unique: true })
+  username: string;
 
-        return next();
-    } catch(err) {
-        return next(err);
-    }
-})
+  @Prop()
+  password: string;
+
+  constructor(user: CreateUserDTO) {
+    super();
+    this.email = user.email;
+    this.username = user.username;
+    this.password = user.password;
+  }
+
+  public static async createUser(user: CreateUserDTO): Promise<UserModel> {
+      return new UserModel({
+          email: user.email,
+          username: user.username,
+          password: await bcrypt.hash(user.password, Number(process.env.HASH_SALT))
+      })
+  }
+}
+
+export const UserSchema = SchemaFactory.createForClass(UserModel);

@@ -2,37 +2,37 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateUserDTO } from './dto/create-user.dto';
-import { User } from './interfaces/user.interface';
+import { IUser, IUserModel } from './interfaces/user.interface';
 
 @Injectable()
 export class UserService {
-    constructor(@InjectModel('User') private readonly userModel: Model<User>) {}
+    constructor(@InjectModel('User') private readonly userModel: IUserModel) {}
 
-    async getUsers(): Promise<User[]> {
+    async getUsers(): Promise<IUser[]> {
         const users = await this.userModel.find().exec();
 
         return users;
     }
 
-    async getUser(userId: string): Promise<User> {
+    async getUser(userId: string): Promise<IUser> {
         const user = await this.getUniqueUser(userId);
 
         return user;
     }
 
-    async getUserByName(name: string): Promise<User> {
+    async getUserByName(name: string): Promise<IUser> {
         const user = await this.userModel.findOne({ username: name }).exec();
 
         return user;
     }
 
-    async addUser(createUserDTO: CreateUserDTO): Promise<User> {
-        const newUser = await new this.userModel(createUserDTO);
+    async createUser(createUserDTO: CreateUserDTO): Promise<IUser> {
+        const newUser = await this.userModel.createUser(createUserDTO);
 
         return newUser.save();
     }
 
-    async updateUserMail(userId: string, email: string): Promise<User> {
+    async updateUserMail(userId: string, email: string): Promise<IUser> {
         const user = await this.getUniqueUser(userId);
 
         user.email = email;
@@ -50,14 +50,8 @@ export class UserService {
         return true;
     }
 
-    private async getUniqueUser(userId: string): Promise<User> {
-        let user;
-
-        try {
-            user = await this.userModel.findById(userId).exec();
-        } catch (error) {
-            throw new NotFoundException('User does not exist!');
-        }
+    private async getUniqueUser(userId: string): Promise<IUser> {
+        const user = await this.userModel.findById(userId).exec();
 
         if (!user) {
             throw new NotFoundException('User does not exist!');
