@@ -20,6 +20,12 @@ export class UserService {
         return user;
     }
 
+    async getUserByName(name: string): Promise<User> {
+        const user = await this.userModel.findOne({ username: name }).exec();
+
+        return user;
+    }
+
     async addUser(createUserDTO: CreateUserDTO): Promise<User> {
         const newUser = await new this.userModel(createUserDTO);
 
